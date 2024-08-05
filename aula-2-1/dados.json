@@ -1,0 +1,17 @@
+[
+    {
+        "nome": "João Silve",
+        "telefone": "(11) 1111-1111",
+        "idade": 23
+    },
+    {
+        "nome": "Rebecca Marques",
+        "telefone": "(11) 1111-1111",
+        "idade": 20
+    },
+    {
+        "nome": "Alek Carai",
+        "telefone": "(11) 1111-1111",
+        "idade": 27
+    }
+]
