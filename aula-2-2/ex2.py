@@ -7,8 +7,7 @@ clientes = [
 
 
 
-filtro_nome = lambda dicionario : dicionario['genero'] != ""
-nomes = filter(filtro_nome, clientes)
+filtro_nome = lambda dicionario : dicionario['nome']
+nomes = map(filtro_nome, clientes)
 print("Apenas os nomes: ")
-for i in clientes:
-    print()
+print(list(nomes))
