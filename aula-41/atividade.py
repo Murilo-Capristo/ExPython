@@ -3,14 +3,15 @@ import oracledb
 from datetime import datetime
 
 
-class Contato():
+class Contato:
     """
-        Classe de contato para servir como padrão para os objetos do tipo contato
+    Classe de contato para servir como padrão para os objetos do tipo contato
     """
-    nome = ""
-    telefone = ""
-    email = ""
-    nascimento = datetime.now()
+    def __init__(self, nome="", telefone="", email="", nascimento=None):
+        self.nome = nome
+        self.telefone = telefone
+        self.email = email
+        self.nascimento = nascimento
 
 
 
@@ -27,18 +28,20 @@ def gerar_conexao_db():
 def gravar_db(contato : Contato) -> bool:
     conexao = gerar_conexao_db()
     cursor = conexao.cursor()
-    sql_insert = f"""
+    sql_insert = """
          INSERT INTO EX_CONTATOS (nome, telefone, email, nascimento) VALUES (:1, :2, :3, :4)"""
-    cursor.execute(sql_insert, (contato.nome, contato.telefone, contato.email, contato.nascimento))
-    conexao.commit
+    
     try:
-        cursor.execute(sql_create)
-        conexao.commit()
+        cursor.execute(sql_insert, (contato.nome, contato.telefone, contato.email, contato.nascimento))
+        conexao.commit
+        # cursor.execute(sql_create)
+        # conexao.commit()
     except Exception as err:
         print("Erro: ", err)
         conexao.rollback()
         return False
     conexao.close()
+    cursor.close()
     return True
 
 
@@ -62,12 +65,13 @@ CONSTRAINT Contato_pk PRIMARY KEY (nome)
 )"""
     try:
         cursor.execute(sql_create)
-        conexao.commit
+        conexao.commit()
     except Exception as err:
         print(err)
         conexao.rollback()
         return False
     conexao.close()
+    cursor.close()
     return True
 
 def menu_principal(): 
@@ -83,7 +87,7 @@ def menu_principal():
 >""" , end="")
 
 def ler_registros():
-    print("""Sub menu (2) Ler registros, escolha uma opção:
+    print("""Sub menu (3) Ler registros, escolha uma opção:
                 (1) Atualizar o registro
                 (2) Remover o Registro
                 (0) Voltar
@@ -92,8 +96,7 @@ def ler_registros():
 
 def opcao_invalida():
     print("Opção inválida, tecle [Enter] para prosseguir")
-    print(">", end="")
-    input()
+    input(">", end="")
 
 
 
@@ -108,21 +111,19 @@ def cadastrar() -> Contato:
     nascimento = input("Nascimento DD/MM/AAAA> ")
     
    
-    if len(nome) > 5 and len(telefone) > 5 and len(email) > 5 and (nascimento) == 10:
-        date_format = '%d/%m/%Y'
-        nascimento_date = datetime.strptime(nascimento, date_format)
-        if nascimento_date < datetime.now():
-            contato = Contato()
-            contato.nome = nome
-            contato.email = email
-            contato.nascimento = nascimento_date
-            contato.telefone = telefone
-            return contato
-        
-        print("Data de nascimento inváida!")
+    if len(nome) > 5 and len(telefone) > 5 and len(email) > 5 and len(nascimento) == 10:
+        try:
+            date_format = '%d/%m/%Y'
+            nascimento_date = datetime.strptime(nascimento, date_format)
+            if nascimento_date < datetime.now():
+                return Contato(nome, telefone, email, nascimento_date)
+            else:
+                print("Data de nascimento inváida!")
+        except ValueError:
+            print("Data de nascimento no formato inválido")
     else:
         print("Os valores precisam ser preenchidos com mais de 5 caracteres em cada campo!")
-        return None
+    return None
         # cursor.execute(sql_insert)
         # con.commit()
         # con.close()
@@ -134,15 +135,21 @@ if __name__ == "__main__":
     exec = True
     while exec:
         menu_principal()
-
         escolha = input()
+
         if (escolha == "1"):
-            gerar_tabela()
+            if  gerar_tabela():
+                print("Tabela gerada com sucesso!")
+            else:
+                print("Falha ao gerar tabela")
+
         elif(escolha == "2"):
             contato = cadastrar()
             if contato is not None:
-                 gravar_db(contato)
-                 print("Contato cadastrado com sucesso!")
+                if gravar_db(contato):
+                    print("Contato cadastrado com sucesso!")
+                else:
+                    print("Falha ao cadastrar o contato.")
             else:
                 print("Contato inválido!")
         elif(escolha == "3"):
