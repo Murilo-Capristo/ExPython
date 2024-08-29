@@ -2,7 +2,6 @@ import os
 import oracledb
 from datetime import datetime
 
-
 class Contato:
     """
     Classe de contato para servir como padrão para os objetos do tipo contato
@@ -13,19 +12,17 @@ class Contato:
         self.email = email
         self.nascimento = nascimento
 
-
-
 def gerar_conexao_db():
     usuario = os.environ.get("FIAP_ORACLE_USER")
     senha = os.environ.get("FIAP_ORACLE_PASS")
-    db_path="oracle.fiap.com.br:1521/orcl"
+    db_path = "oracle.fiap.com.br:1521/orcl"
     con = oracledb.connect(
         user=usuario, 
         password=senha, 
         dsn=db_path)
     return con
 
-def gravar_db(contato : Contato) -> bool:
+def gravar_db(contato: Contato) -> bool:
     conexao = gerar_conexao_db()
     cursor = conexao.cursor()
     sql_insert = """
@@ -33,23 +30,15 @@ def gravar_db(contato : Contato) -> bool:
     
     try:
         cursor.execute(sql_insert, (contato.nome, contato.telefone, contato.email, contato.nascimento))
-        conexao.commit
-        # cursor.execute(sql_create)
-        # conexao.commit()
+        conexao.commit()  # Corrigido para chamar com parênteses
+        return True
     except Exception as err:
         print("Erro: ", err)
         conexao.rollback()
         return False
-    conexao.close()
-    cursor.close()
-    return True
-
-
-
-# cursor = con.cursor()
-# cursor.execute(slq_create)
-# con.commit()
-# con.close()
+    finally:
+        cursor.close()
+        conexao.close()  # Move o fechamento da conexão para o finally para garantir que sempre seja fechado
 
 def gerar_tabela() -> bool:
     conexao = gerar_conexao_db()
@@ -66,13 +55,14 @@ CONSTRAINT Contato_pk PRIMARY KEY (nome)
     try:
         cursor.execute(sql_create)
         conexao.commit()
+        return True
     except Exception as err:
         print(err)
         conexao.rollback()
         return False
-    conexao.close()
-    cursor.close()
-    return True
+    finally:
+        cursor.close()
+        conexao.close()
 
 def menu_principal(): 
     os.system("cls")
@@ -98,8 +88,6 @@ def opcao_invalida():
     print("Opção inválida, tecle [Enter] para prosseguir")
     input(">", end="")
 
-
-
 def cadastrar() -> Contato:
     """
         Função para pedir os dados de contato, e retorna um objeto do tipo Contato
@@ -110,7 +98,6 @@ def cadastrar() -> Contato:
     email = input("Email XXXXXXXX@XXXX.COM> ")
     nascimento = input("Nascimento DD/MM/AAAA> ")
     
-   
     if len(nome) > 5 and len(telefone) > 5 and len(email) > 5 and len(nascimento) == 10:
         try:
             date_format = '%d/%m/%Y'
@@ -118,32 +105,26 @@ def cadastrar() -> Contato:
             if nascimento_date < datetime.now():
                 return Contato(nome, telefone, email, nascimento_date)
             else:
-                print("Data de nascimento inváida!")
+                print("Data de nascimento inválida!")
         except ValueError:
             print("Data de nascimento no formato inválido")
     else:
         print("Os valores precisam ser preenchidos com mais de 5 caracteres em cada campo!")
     return None
-        # cursor.execute(sql_insert)
-        # con.commit()
-        # con.close()
-       
-        
+
 if __name__ == "__main__":
-    escolha = menu_principal()
-    print(f"O usuário escolheu: {escolha}")
     exec = True
     while exec:
         menu_principal()
         escolha = input()
 
-        if (escolha == "1"):
-            if  gerar_tabela():
+        if escolha == "1":
+            if gerar_tabela():
                 print("Tabela gerada com sucesso!")
             else:
                 print("Falha ao gerar tabela")
 
-        elif(escolha == "2"):
+        elif escolha == "2":
             contato = cadastrar()
             if contato is not None:
                 if gravar_db(contato):
@@ -152,9 +133,9 @@ if __name__ == "__main__":
                     print("Falha ao cadastrar o contato.")
             else:
                 print("Contato inválido!")
-        elif(escolha == "3"):
+        elif escolha == "3":
             ler_registros()
-        elif(escolha == "0"):
+        elif escolha == "0":
             exec = False
         else:
             opcao_invalida()
