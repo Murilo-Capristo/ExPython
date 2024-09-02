@@ -22,11 +22,13 @@ def gerar_conexao_db():
         dsn=db_path)
     return con
 
+
+nome_tabela = "EX_CONTATOS"
 def gravar_db(contato: Contato) -> bool:
     conexao = gerar_conexao_db()
     cursor = conexao.cursor()
-    sql_insert = """
-         INSERT INTO EX_CONTATOS (nome, telefone, email, nascimento) VALUES (:1, :2, :3, :4)"""
+    sql_insert = f"""
+         INSERT INTO {nome_tabela} (nome, telefone, email, nascimento) VALUES (:1, :2, :3, :4)"""
     
     try:
         cursor.execute(sql_insert, (contato.nome, contato.telefone, contato.email, contato.nascimento))
@@ -44,8 +46,8 @@ def gerar_tabela() -> bool:
     conexao = gerar_conexao_db()
     cursor = conexao.cursor()
 
-    sql_create = """
-CREATE TABLE EX_CONTATOS(
+    sql_create = f"""
+CREATE TABLE {nome_tabela}(
 nome VARCHAR2(100),
 telefone VARCHAR2(20),
 email VARCHAR2(50),
@@ -78,20 +80,127 @@ def menu_principal():
 
 
 
-def atualizar_registros():
-    print()
+def mostrar_registros() -> bool:
+    print("Todos os registros:\n")
+    conexao = gerar_conexao_db()
+    cursor = conexao.cursor()
+    sql_mostrar = f"SELECT * FROM {nome_tabela}"
+    try:
+        cursor.execute(sql_mostrar)
+        conexao.commit()
+        dados = cursor.fetchall()
+        for d in dados:
+            print(d)
+        return True
+    except Exception as err:
+        print(f"Erro-> {err}")
+        conexao.rollback()
+        return False
+    finally:
+        cursor.close()
+        conexao.close()
+
+def procurar_registro() -> Contato:
+    conexao = gerar_conexao_db()
+    cursor = conexao.cursor()
+    exec = True
+    while exec:
+        nome = input("Digite o nome do contato \n>")
+        sql_procurar = f"SELECT * FROM {nome_tabela} WHERE NOME LIKE :nome"
+
+        try:
+            cursor.execute(sql_procurar, NOME=f"%{nome}%")
+            dados = cursor.fetchall()
+            if dados:
+                for d in dados:
+                    contato = Contato(nome=d[0], telefone=d[1], email=d[2], nascimento=d[3])
+                    print(f"Nome: {contato.nome} \n Telefone: {contato.telefone}\n Email: {contato.email}\n Nascimento: {contato.nascimento}\n")
+                    return contato
+                    
+            else:
+                print("Nenhum resultado encontrado!")
+        except Exception as err:
+            print(f"Erro-> {err}")
+        
+
+def remover():
+    cliente = procurar_registro()
+    if cliente is None:
+        print("Nenhum cliente encontrado com esses parâmetros")
+        return
+    conexao = gerar_conexao_db()
+    cursor = conexao.cursor()
+    sql_remove = f"""DELETE FROM {nome_tabela} WHERE NOME = :nome"""
+    try:
+        cursor.execute(sql_remove, nome=cliente.nome)
+        conexao.commit()
+        print(f"Contato {cliente.nome} Removido com sucesso!")
+    except Exception as err:
+        print(f"Erro-> {err}")
+        print("Contato não Removido")
+
+
+# def atualizar_registro() -> None:
+#     cliente = procurar_registro()
+#     if cliente is None:
+#         print("Nenhum Cliente encontrado com esses parâmetros")
+#         return
+#     conexao = gerar_conexao_db()
+#     cursor = conexao.cursor()
+    
+#     nome = input("Digite o nome completo Atualizado ( <Enter> para não mudar )") or cliente.nome
+#     telefone = input("Digite o telefone Atualizado ( <Enter> para não mudar) ") or cliente.telefone
+#     email = input("Digite o email Atualizado ( <Enter> para não mudar) ") or cliente.email
+#     data = input("Digite a data (dd/mm/aaaa) Atualizada ( <Enter> para não mudar) ") or cliente.nascimento
+    
+#     try:
+#         sql_atualizar = f"""
+# UPDATE {nome_tabela}
+# SET NOME = :1, TELEFONE = :2, EMAIL = :3, DATA = :3
+# WHERE NOME = :5
+#         """
+#         set_collum = []
+#         conditions = {}
+#         if nome != cliente.nome:
+#             set_collum.append("NOME = :nome")
+#             conditions['nome'] = nome
+
+#         if telefone != cliente.telefone:
+#             set_collum.append("TELEFONE = :telefone")
+#             conditions['telefone'] = telefone 
+
+#         if email != cliente.email:
+#             set_collum.append("EMAIL = :email")
+#             conditions['email'] = email
+
+        
+
+        
+#         cursor.execute(sql_atualizar,nome,telefone,email,data,cliente )
+#         conexao.commit
+#         print(f"Dados do cliente {cliente}")
+
+    
+
+    
 
 
 
 
 
 def ler_registros():
+
     print("""Sub menu (3) Ler registros, escolha uma opção:
                 (1) Atualizar o registro
                 (2) Remover o Registro
                 (0) Voltar
 >""", end="")
     escolha = input()
+    if escolha == "1":
+        procurar_registro()
+    elif escolha == "2":
+        remover()
+
 
 def opcao_invalida():
     print("Opção inválida, tecle [Enter] para prosseguir")
