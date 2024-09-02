@@ -76,6 +76,15 @@ def menu_principal():
         (0) Sair 
 >""" , end="")
 
+
+
+def atualizar_registros():
+    print()
+
+
+
+
+
 def ler_registros():
     print("""Sub menu (3) Ler registros, escolha uma opção:
                 (1) Atualizar o registro
