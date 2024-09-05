@@ -140,54 +140,74 @@ def remover():
         print("Contato não Removido")
 
 
-# def atualizar_registro() -> None:
-#     cliente = procurar_registro()
-#     if cliente is None:
-#         print("Nenhum Cliente encontrado com esses parâmetros")
-#         return
-#     conexao = gerar_conexao_db()
-#     cursor = conexao.cursor()
+
+def atualizar_registro() -> None:
+    cliente = procurar_registro()
+    if cliente is None:
+        print("Nenhum cliente encontrado com esses parâmetros")
+        return
+    conexao = gerar_conexao_db()
+    cursor = conexao.cursor()
     
-#     nome = input("Digite o nome completo Atualizado ( <Enter> para não mudar )") or cliente.nome
-#     telefone = input("Digite o telefone Atualizado ( <Enter> para não mudar) ") or cliente.telefone
-#     email = input("Digite o email Atualizado ( <Enter> para não mudar) ") or cliente.email
-#     data = input("Digite a data (dd/mm/aaaa) Atualizada ( <Enter> para não mudar) ") or cliente.nascimento
+    nome = input("Digite o nome completo Atualizado ( <Enter> para não mudar ): ") or cliente.nome
+    telefone = input("Digite o telefone Atualizado ( <Enter> para não mudar): ") or cliente.telefone
+    email = input("Digite o email Atualizado ( <Enter> para não mudar): ") or cliente.email
+    nascimento = input("Digite a data (dd/mm/aaaa) Atualizada ( <Enter> para não mudar): ") or cliente.nascimento
     
-#     try:
-#         sql_atualizar = f"""
-# UPDATE {nome_tabela}
-# SET NOME = :1, TELEFONE = :2, EMAIL = :3, DATA = :3
-# WHERE NOME = :5
-#         """
-#         set_collum = []
-#         conditions = {}
-#         if nome != cliente.nome:
-#             set_collum.append("NOME = :nome")
-#             conditions['nome'] = nome
-
-#         if telefone != cliente.telefone:
-#             set_collum.append("TELEFONE = :telefone")
-#             conditions['telefone'] = telefone 
-
-#         if email != cliente.email:
-#             set_collum.append("EMAIL = :email")
-#             conditions['email'] = email
-
+    if nascimento:
+        try:
+            date_format = '%d/%m/%Y'
+            nascimento = datetime.strptime(nascimento, date_format)
+            if nascimento < datetime.now():
+                nascimento.date()
+            else:
+                print("Data inválida!")
+                return
+        except ValueError:
+            print("Formateo de data inválido. Use DD/MM/YYYY")
+            return
         
-
-        
-#         cursor.execute(sql_atualizar,nome,telefone,email,data,cliente )
-#         conexao.commit
-#         print(f"Dados do cliente {cliente}")
-
+    set_columns = []
+    conditions = {}
     
+    if nome != cliente.nome:
+        set_columns.append("nome = :nome")
+        conditions['nome'] = nome
 
+    if telefone != cliente.telefone:
+        set_columns.append("telefone = :telefone")
+        conditions['telefone'] = telefone 
+
+    if email != cliente.email:
+        set_columns.append("email = :email")
+        conditions['email'] = email
+
+    if nascimento != cliente.nascimento:
+        set_columns.append("nascimento = :nascimento")
+        conditions['nascimento'] = nascimento
     
+    if not set_columns:
+        print("Nenhuma alteração foi feita")
+        return
 
-
-
-
-
+    set_clause = ", ".join(set_columns)
+    sql_atualizar = f"""
+    UPDATE {nome_tabela}
+    SET {set_clause}
+    WHERE nome = :cliente_nome
+    """
+    conditions['cliente_nome'] = cliente.nome
+    
+    try:
+        cursor.execute(sql_atualizar, conditions)
+        conexao.commit()
+        print(f"Dados do cliente atualizados: {nome}, {telefone}, {email}, {nascimento}")
+    except Exception as err:
+        print(f"Erro ao atualizar o registro: {err}")
+    finally:
+        cursor.close()
+        conexao.close()
+  
 def ler_registros():
 
     print("""Sub menu (3) Ler registros, escolha uma opção:
@@ -197,7 +217,7 @@ def ler_registros():
 >""", end="")
     escolha = input()
     if escolha == "1":
-        procurar_registro()
+        atualizar_registro()
     elif escolha == "2":
         remover()
 
